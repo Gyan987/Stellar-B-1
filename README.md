@@ -1,12 +1,7 @@
 <p align="center">
-  <img src="Frontend/public/log.eg" alt="Roastellar Logo" width="200" />
 </p>
 
-# Roastellar
-
-[![Contracts CI](https://github.com/user987/Roastellar/actions/workflows/contracts-ci.yml/badge.svg)](https://github.com/user987/Roastellar/actions/workflows/contracts-ci.yml)
-[![Backend CI/CD](https://github.com/usser987/Roastellar/actions/workflows/backend-ci-cd.yml/badge.svg)](https://github.com/user987/Roastellar/actions/workflows/backend-ci-cd.yml)
-[![Frontend CI/CD](https://github.com/user987/Roastellar/actions/workflows/frontend-ci-cd.yml/badge.svg)](https://github.com/user987/Roastellar/actions/workflows/frontend-ci-cd.yml)
+# Aoastellar
 
 A fully on-chain roast battle platform built on Stellar Soroban.
 
