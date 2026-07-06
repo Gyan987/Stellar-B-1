@@ -1,7 +1,7 @@
 <p align="center">
 </p>
 
-# Aoastellar
+# X-Roastellar
 
 A fully on-chain roast battle platform built on Stellar Soroban.
 
