@@ -1,0 +1,343 @@
+'use client'
+
+import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '@clerk/nextjs'
+import { motion } from 'framer-motion'
+import { ArrowRight, Coins, Sparkles, Swords, Trophy, Wallet as WalletIcon } from 'lucide-react'
+import { toast } from 'sonner'
+import { Sidebar } from '@/components/Sidebar'
+import { BattleList } from '@/components/BattleCard'
+import { PageLoader, SkeletonCard } from '@/components/LoadingScreen'
+import { apiRoutes, type Battle, type LeaderboardEntry, type User, type Wallet } from '@/lib/api'
+import { setOnboardingComplete } from '@/lib/utils'
+import { getWalletAuthToken, isWalletAuthenticated } from '@/lib/walletAuth'
+import { useRouter } from 'next/navigation'
+import ElectricBorder from '@/components/ElectricBorder'
+import { AnimatedList } from '@/components/AnimatedList'
+import PrismaticTiltCard from '@/components/PrismaticTiltCard'
+
+export default function DashboardPage() {
+  const router = useRouter()
+  const { getToken, isLoaded, isSignedIn } = useAuth()
+  const [user, setUser] = useState<User | null>(null)
+  const [battles, setBattles] = useState<Battle[]>([])
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [wallet, setWallet] = useState<Wallet | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasAuthWarning, setHasAuthWarning] = useState(false)
+
+  useEffect(() => {
+    if (!isLoaded) {
+      return
+    }
+
+    const walletMode = isWalletAuthenticated()
+    if (!isSignedIn && !walletMode) {
+      router.replace('/sign-in')
+      return
+    }
+
+    Promise.resolve(walletMode ? getWalletAuthToken() : getToken({ skipCache: true }))
+      .then((token) => {
+        if (!token) throw new Error('Missing auth token')
+
+        return Promise.allSettled([
+          apiRoutes.users.me(token),
+          apiRoutes.wallet.me(token),
+          apiRoutes.battles.open(),
+          apiRoutes.users.leaderboard(),
+        ])
+      })
+      .then(([userResult, walletResult, battlesResult, leaderboardResult]) => {
+        if (userResult.status === 'fulfilled') {
+          const me = userResult.value.data
+          setUser(me)
+
+          if (me.onboardingCompleted) {
+            setOnboardingComplete()
+          } else {
+            router.replace('/onboarding')
+            return
+          }
+        } else {
+          setHasAuthWarning(true)
+        }
+
+        if (walletResult.status === 'fulfilled') {
+          setWallet(walletResult.value.data)
+        }
+
+        if (battlesResult.status === 'fulfilled') {
+          setBattles(battlesResult.value.data)
+        }
+
+        if (leaderboardResult.status === 'fulfilled') {
+          setLeaderboard(leaderboardResult.value.data)
+        }
+      })
+      .catch(() => {
+        setHasAuthWarning(true)
+        toast.error('Unable to load your authenticated dashboard session.')
+      })
+      .finally(() => setIsLoading(false))
+  }, [getToken, isLoaded, isSignedIn, router])
+
+  const liveActivity = useMemo(() => {
+    const activity: string[] = []
+
+    if (battles.length > 0) {
+      activity.push(`${battles.length} open battle${battles.length > 1 ? 's are' : ' is'} live right now.`)
+      const hottestBattle = [...battles].sort((a, b) => b.pot - a.pot)[0]
+      activity.push(`Highest open pot: ${hottestBattle.pot.toFixed(2)} XLM for "${hottestBattle.topic}".`)
+    }
+
+    if (leaderboard[0]) {
+      activity.push(`${leaderboard[0].username} leads the leaderboard with ${leaderboard[0].xp.toLocaleString()} XP.`)
+    }
+
+    if (user?.rank) {
+      activity.push(`Your current rank is #${user.rank}.`)
+    }
+
+    if (wallet) {
+      activity.push(`Wallet balance available: ${wallet.balance.toFixed(2)} XLM.`)
+    }
+
+    if (activity.length === 0) {
+      activity.push('No live activity is available yet.')
+    }
+
+    return activity.slice(0, 5)
+  }, [battles, leaderboard, user?.rank, wallet])
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen pt-16 md:pt-0">
+        <Sidebar />
+        <main className="mobile-nav-offset min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {[0, 1, 2, 3].map((item) => <SkeletonCard key={item} />)}
+          </div>
+          <PageLoader message="Loading your arena hub" />
+        </main>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex min-h-screen pt-16 md:pt-0">
+      <Sidebar />
+      <main className="mobile-nav-offset min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="glass rounded-[28px] p-5 sm:rounded-[32px] sm:p-6 md:rounded-[36px] md:p-8">
+            <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
+              <div>
+                <p className="text-sm uppercase tracking-[0.28em] text-blue-200/75">Dashboard</p>
+                <h1 className="mt-3 font-orbitron text-3xl font-bold leading-tight text-white sm:text-4xl">Welcome back, {user?.username ?? 'Player'}</h1>
+                {/* <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55 sm:text-base">
+                  Your command center for battles, wallet health, streaks, and everything the arena is doing right now.
+                </p> */}
+              </div>
+              {/* <div className="rounded-[22px] border border-amber-300/14 bg-amber-300/8 px-4 py-4 sm:rounded-[28px] sm:px-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-amber-100/70">Live edge</p>
+                <p className="mt-2 text-sm text-white/72">Spectator predictions are trending 18% above yesterday.</p>
+              </div> */}
+            </div>
+
+            {hasAuthWarning && (
+              <div className="mt-6 rounded-[24px] border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100/85">
+                Account-only stats are unavailable right now because the backend is not accepting authenticated local requests yet. Public battle and leaderboard data can still load.
+              </div>
+            )}
+
+            <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              <StatCard label="Rank" value={`#${user?.rank ?? '-'}`} icon={<Trophy className="h-5 w-5 text-amber-200" />} />
+              <StatCard label="XP" value={(user?.xp ?? 0).toLocaleString()} icon={<Sparkles className="h-5 w-5 text-blue-200" />} />
+              <StatCard label="Wins" value={String(user?.wins ?? 0)} icon={<Swords className="h-5 w-5 text-violet-200" />} />
+              <StatCard label="Wallet Balance" value={`${(wallet?.balance ?? user?.walletBalance ?? 0).toFixed(2)} XLM`} icon={<WalletIcon className="h-5 w-5 text-emerald-200" />} />
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
+            <section className="space-y-8">
+              <div className="glass rounded-[28px] p-5 sm:rounded-[36px] sm:p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.24em] text-white/35">Quick actions</p>
+                    <h2 className="mt-2 font-orbitron text-2xl text-white">Next moves</h2>
+                  </div>
+                </div>
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  <QuickAction href="/battles" title="Quick Match" copy="Jump into the freshest open battle." />
+                  <QuickAction href="/battles" title="Create Contest" copy="Launch a new battle and set the tone." />
+                  <QuickAction href="/battles" title="Join Open Battle" copy="Pick a live opportunity from the queue." />
+                  <QuickAction href="/leaderboard" title="Leaderboard" copy="Track rivals and rising stars." />
+                </div>
+              </div>
+
+              <div className="glass rounded-[28px] p-5 sm:rounded-[36px] sm:p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.24em] text-white/35">Open battles</p>
+                    <h2 className="mt-2 font-orbitron text-2xl text-white">Join the arena</h2>
+                  </div>
+                  <Link href="/battles" className="text-sm font-semibold text-blue-200">
+                    Browse all
+                  </Link>
+                </div>
+                <div className="mt-6">
+                  <BattleList battles={battles} emptyMessage="No open battles available yet." />
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-8">
+              <div className="glass rounded-[28px] p-5 sm:rounded-[36px] sm:p-6">
+                <p className="text-sm uppercase tracking-[0.24em] text-white/35">Live activity feed</p>
+                <div className="mt-5">
+                  <AnimatedList
+                    items={liveActivity}
+                    showGradients={false}
+                    enableArrowNavigation={false}
+                    displayScrollbar={false}
+                    containerClassName="max-h-none overflow-visible p-0"
+                    renderItem={(item) => (
+                      <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 text-sm text-white/68">
+                        {item}
+                      </div>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="glass rounded-[28px] p-5 sm:rounded-[36px] sm:p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.24em] text-white/35">Top players</p>
+                    <h2 className="mt-2 font-orbitron text-2xl text-white">Leaderboard pulse</h2>
+                  </div>
+                  <Coins className="h-5 w-5 text-amber-200" />
+                </div>
+                <div className="mt-6">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:items-end">
+                    {[
+                      leaderboard[1] ?? null,
+                      leaderboard[0] ?? null,
+                      leaderboard[2] ?? null,
+                    ].map((entry, idx) => {
+                      const slot = idx === 0 ? 2 : idx === 1 ? 1 : 3
+                      const borderColor = slot === 1 ? '#f1d039' : slot === 2 ? '#abd8da' : '#a54b0f'
+                      const cardStyles =
+                        slot === 1
+                          ? 'bg-white/20 backdrop-blur-xl border border-white/30 text-white min-h-[220px]'
+                          : slot === 2
+                          ? 'bg-white/15 backdrop-blur-xl border border-white/25 text-white min-h-[185px]'
+                          : 'bg-white/10 backdrop-blur-xl border border-white/20 text-white min-h-[185px]'
+                      const chipStyles =
+                        slot === 1
+                          ? 'bg-black/80 text-white'
+                          : slot === 2
+                          ? 'bg-black/75 text-white'
+                          : 'bg-black/70 text-white'
+
+                      return (
+                        <motion.div
+                          key={`podium-${slot}-${entry?.id ?? 'empty'}`}
+                          initial={{ opacity: 0, y: 18 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.08 }}
+                          className="relative rounded-[28px]"
+                        >
+                          <ElectricBorder color={borderColor} speed={1} chaos={0.12} borderRadius={28} className="rounded-[28px]">
+                            <div className={`relative rounded-[28px] px-5 pb-7 pt-8 ${cardStyles}`}>
+                              <div className="absolute -top-5 left-1/2 -translate-x-1/2">
+                                {entry?.avatar ? (
+                                  <img
+                                    src={entry.avatar}
+                                    alt={entry.username}
+                                    className="h-10 w-10 rounded-full border-2 border-white/80 object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/70 bg-[#1B1449] text-xs font-bold text-white">
+                                    {entry?.username?.slice(0, 2).toUpperCase() ?? `#${slot}`}
+                                  </div>
+                                )}
+                              </div>
+                              <div className={`mx-auto inline-flex rounded-full px-4 py-2 text-2xs font-bold uppercase tracking-[0.08em] ${chipStyles}`}>
+                                {slot === 1 ? '1st place' : slot === 2 ? '2nd place' : '3rd place'}
+                              </div>
+                              <p className="mt-10 text-center font-orbitron text-[2rem] font-black leading-none">
+                                {entry ? entry.xp.toLocaleString() : '0'}
+                              </p>
+                              <p className="mt-2 text-center text-sm font-semibold">
+                                {entry?.username ?? 'Waiting'}
+                              </p>
+                            </div>
+                          </ElectricBorder>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+
+                  <div className="mt-5">
+                    <AnimatedList
+                      items={leaderboard.slice(3, 6)}
+                      showGradients={false}
+                      enableArrowNavigation={false}
+                      displayScrollbar={false}
+                      containerClassName="max-h-none overflow-visible p-0"
+                      renderItem={(entry) => (
+                        <div className="flex items-center justify-between rounded-[20px] border border-white/8 bg-white/[0.03] px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/8 font-orbitron text-white">
+                              {entry.rank}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-white">{entry.username}</p>
+                              <p className="text-xs text-white/45">{entry.wins} wins</p>
+                            </div>
+                          </div>
+                          <p className="font-orbitron text-white">{entry.xp.toLocaleString()} XP</p>
+                        </div>
+                      )}
+                    />
+                  </div>
+                </div>
+                <Link href="/leaderboard" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-200">
+                  View leaderboard
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+  return (
+    <PrismaticTiltCard radius={28}>
+      <div className="rounded-[22px] border border-white/10 bg-white/[0.04] p-4 sm:rounded-[28px] sm:p-5">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-white/35">
+          {icon}
+          {label}
+        </div>
+        <p className="mt-4 font-orbitron text-2xl text-white sm:text-3xl">{value}</p>
+      </div>
+    </PrismaticTiltCard>
+  )
+}
+
+function QuickAction({ href, title, copy }: { href: string; title: string; copy: string }) {
+  return (
+    <PrismaticTiltCard radius={28}>
+      <Link href={href} className="block rounded-[22px] border border-white/10 bg-white/[0.03] p-4 transition-colors hover:bg-white/[0.06] sm:rounded-[28px] sm:p-5">
+        <p className="font-orbitron text-lg text-white sm:text-xl">{title}</p>
+        <p className="mt-3 text-sm leading-6 text-white/50">{copy}</p>
+      </Link>
+    </PrismaticTiltCard>
+  )
+}

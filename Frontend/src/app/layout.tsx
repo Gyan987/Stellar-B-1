@@ -1,0 +1,39 @@
+import type { Metadata, Viewport } from 'next'
+import { ClerkProvider } from '@/components/ClerkProvider'
+import { Navbar } from '@/components/Navbar'
+import { AppBackground } from '@/components/AppBackground'
+import './globals.css'
+
+export const metadata: Metadata = {
+  title: 'Roastellar - Roast. Battle. Earn.',
+  description: 'A gamified social battle platform powered by Stellar where users join roast battles, vote, predict winners, and earn rewards.',
+  icons: {
+    icon: '/logo.jpeg',
+    apple: '/logo.jpeg',
+  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en" className="dark" data-scroll-behavior="smooth">
+      <body className="font-inter antialiased">
+        <ClerkProvider>
+          <AppBackground />
+          <div className="relative z-10">
+            <Navbar />
+            {children}
+          </div>
+        </ClerkProvider>
+      </body>
+    </html>
+  )
+}

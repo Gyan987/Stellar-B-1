@@ -1,0 +1,27 @@
+name: Contracts CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+
+jobs:
+  test-contract:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts/roastellar
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: contracts/roastellar
+
+      - name: Run contract tests
+        run: cargo test

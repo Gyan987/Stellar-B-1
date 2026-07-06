@@ -1,0 +1,116 @@
+'use client'
+
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Coins, Sparkles, Users } from 'lucide-react'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+
+interface PredictionPanelProps {
+  player1Id?: string
+  player2Id?: string
+  player1Name: string
+  player2Name: string
+  onPredict: (playerId: string, amount: number) => Promise<void> | void
+  isSpectator: boolean
+  disabled?: boolean
+}
+
+export function PredictionPanel({ player1Id, player2Id, player1Name, player2Name, onPredict, isSpectator, disabled = false }: PredictionPanelProps) {
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
+  const [amount, setAmount] = useState('10')
+  const [submitting, setSubmitting] = useState(false)
+
+  const submitPrediction = async () => {
+    if (!selectedPlayer) {
+      toast.error('Choose a player to back')
+      return
+    }
+
+    const parsed = Number(amount)
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      toast.error('Enter a valid XLM amount')
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      await onPredict(selectedPlayer, parsed)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (!isSpectator) {
+    return (
+      <div className="glass rounded-[28px] p-6">
+        <div className="flex items-center gap-2 text-white">
+          <Users className="h-5 w-5 text-white/40" />
+          <h3 className="font-semibold">Prediction Desk</h3>
+        </div>
+        <p className="mt-4 text-sm leading-6 text-white/50">
+          Only spectators can place predictions while a battle is live.
+        </p>
+      </div>
+    )
+  }
+
+  const options = [
+    { id: player1Id || player1Name, label: player1Name, accent: 'bg-blue-500/12 border-blue-400/18' },
+    { id: player2Id || player2Name, label: player2Name, accent: 'bg-violet-500/12 border-violet-400/18' },
+  ]
+
+  return (
+    <div className="glass rounded-[28px] p-6">
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-5 w-5 text-amber-200" />
+        <h3 className="font-semibold text-white">Prediction Desk</h3>
+      </div>
+
+      <p className="mt-3 text-sm leading-6 text-white/50">
+        Stake a small amount of testnet XLM and ride the crowd if your read is right.
+      </p>
+
+      <div className="mt-5 space-y-3">
+        {options.map((option) => (
+          <motion.button
+            key={option.id}
+            whileHover={{ y: -2 }}
+            disabled={submitting || disabled}
+            onClick={() => setSelectedPlayer(option.id)}
+            className={cn(
+              'w-full rounded-2xl border p-4 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60',
+              option.accent,
+              selectedPlayer === option.id ? 'ring-2 ring-blue-400/45' : 'opacity-80 hover:opacity-100'
+            )}
+          >
+            <p className="font-semibold text-white">{option.label}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.24em] text-white/40">Will win</p>
+          </motion.button>
+        ))}
+      </div>
+
+      <label className="mt-5 block text-xs uppercase tracking-[0.24em] text-white/35">Amount</label>
+      <div className="mt-2 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+        <Coins className="h-4 w-4 text-amber-200" />
+        <input
+          type="number"
+          min="1"
+          value={amount}
+          disabled={submitting || disabled}
+          onChange={(event) => setAmount(event.target.value)}
+          className="w-full bg-transparent text-white outline-none placeholder:text-white/25 disabled:cursor-not-allowed disabled:opacity-60"
+          placeholder="10"
+        />
+      </div>
+
+      <button
+        onClick={submitPrediction}
+        disabled={submitting || disabled}
+        className="mt-5 w-full rounded-2xl bg-[#B88A35] px-4 py-3 font-semibold text-slate-950 transition-colors hover:bg-[#D1A24A] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {submitting ? 'Placing prediction...' : 'Predict Winner'}
+      </button>
+    </div>
+  )
+}
