@@ -5,6 +5,3 @@ services:
     plan: free
     rootDir: Backend
     buildCommand: npm ci
-    startCommand: npm start
-    autoDeployTrigger: commit
-    healthCheckPath: /health
