@@ -1,8 +1,6 @@
 # Roastellar Architecture
 
-## Overview
 
-Roastellar is a fully on-chain roast battle platform built on Stellar Soroban. Players create battles, submit roasts, and spectators vote to determine winners. The platform features real-time updates, wallet integration, and prediction markets.
 
 ## System Architecture
 
