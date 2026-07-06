@@ -22,6 +22,7 @@ This document tracks required security controls for Roastellar and maps each con
 | input sanitization | PASS | Centralized sanitizer utility is applied across battle, prediction, wallet-auth, and profile update paths. |
 | wallet secret encryption | PASS | Managed wallet secrets encrypted at rest before persistence. |
 
+
 ---
 
 ## 1) Auth Protection
