@@ -8,7 +8,18 @@ This document tracks required security controls for Roastellar and maps each con
 - Frontend: `Frontend/src/**`
 - Repository hygiene and secrets handling: root and app-level `.gitignore` files
 
+## Checklist Status Summary
 
+| Control | Status | Notes |
+|---|---|---|
+| auth protection | PASS | Protected API routes enforce bearer token auth (Clerk or wallet JWT). |
+| route protection | PASS | Backend route guards + frontend middleware protection pattern in place. |
+| validation | PASS | Request payload validation with `zod` and route-level validators on critical write endpoints. |
+| rate limiting | PASS | Global `/api` limiter plus tighter write/prediction limiters. |
+| env secrets | PASS | Secrets sourced from env vars; `.env` patterns are gitignored. |
+| duplicate vote prevention | PASS | App-level duplicate check plus DB unique compound index. |
+| input sanitization | PASS | Centralized sanitizer utility is applied across battle, prediction, wallet-auth, and profile update paths. |
+| wallet secret encryption | PASS | Managed wallet secrets encrypted at rest before persistence. |
 
 ---
 
