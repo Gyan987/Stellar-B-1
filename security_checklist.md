@@ -2,6 +2,7 @@
 
 This document tracks required security controls for Roastellar and maps each control to implementation evidence in the current codebase.
 
+
 ## Scope
 
 - Backend: `Backend/src/**`
