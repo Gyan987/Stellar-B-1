@@ -202,6 +202,7 @@ Backend/src/
     └── apiResponse.js          # Response helpers
 ```
 
+
 ### REST API Routes
 
 | Endpoint | Method | Description |
