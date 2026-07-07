@@ -3,7 +3,7 @@
 
 # X-Roastellar
 
-A fully on-chain roast battle platform built on Stellar Soroban.
+A fully on-chain roast battle platform built on Stellar Soroban
 
 ## Quick Navigation
 
