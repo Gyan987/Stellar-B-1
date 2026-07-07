@@ -18,7 +18,7 @@ A fully on-chain roast battle platform built on Stellar Soroban.
   <!-- - API endpoint: [https://roastellar-9khj.onrender.com/api/analytics/metrics](https://roastellar-9khj.onrender.com/api/analytics/metrics) -->
 - **Monitoring Dashboard (Screenshot):** [Monitoring Active](#monitoring-active)
 - **Completed Security Checklist:** [security_checklist.md](./security_checklist.md)
-- **Community Contribution (Twitter/X Post):** [https://x.com/user987/status/2049507507253768670](https://x.com/user987/status/2049507507253768670)
+- **Community Contribution (Twitter/X Post):** [https://x.com/user987/status/769151787685370](https://x.com/user987/status/531568140630)
 - **Advanced Feature (Description + Proof):** [Advanced Feature: Fee Sponsorship](#advanced-feature-fee-sponsorship-gasless-transactions-via-fee-bump)
 - **Data Indexing (Approach + Endpoint):** [Data Indexing](#data-indexing)
 
@@ -357,7 +357,7 @@ stellar contract deploy \
 
 ## Community Contribution
 
-**Tweet Link:** [https://x.com/user987/status/2049507507253768670](https://x.com/user987/status/2049507507253768670)
+**Tweet Link:** [https://x.com/user987/status/2153482409768670](https://x.com/user987/status/85278568734583)
 
 
 ## License
